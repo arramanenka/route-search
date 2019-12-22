@@ -5,6 +5,7 @@ import lombok.*;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Basic graph implementation, not synchronized
@@ -54,32 +55,19 @@ public class Graph<T> {
 
     private void getGraphConnections(T start, int maxWeight, Consumer<GraphConnection<T>> onNewGraphFound) {
         Set<GraphConnection<T>> resultSet = new HashSet<>();
-
         PriorityQueue<GraphConnection<T>> priorityQueue = new PriorityQueue<>(graphConnectionComparator);
-        Iterator<Connection<T>> startListIterator = nodeListMap.get(start).iterator();
 
-        GraphConnection<T> startGraphConnection = null;
-        GraphConnection<T> graphConnection;
-        while (true) {
-            for (; startGraphConnection == null && startListIterator.hasNext(); ) {
-                Connection<T> next = startListIterator.next();
-                if (next.getWeight() < maxWeight) {
-                    startGraphConnection = new GraphConnection<>(next, start, next.getWeight());
-                    break;
-                }
+        List<Connection<T>> startConnections = nodeListMap.get(start);
+        if (startConnections == null) {
+            return;
+        }
+        for (Connection<T> connection : startConnections) {
+            if (connection.getWeight() < maxWeight) {
+                priorityQueue.add(new GraphConnection<>(connection, start, connection.getWeight()));
             }
-            if (priorityQueue.isEmpty()) {
-                graphConnection = startGraphConnection;
-                startGraphConnection = null;
-            } else if (startGraphConnection == null || graphConnectionComparator.compare(startGraphConnection, priorityQueue.peek()) < 0) {
-                graphConnection = priorityQueue.poll();
-            } else {
-                graphConnection = startGraphConnection;
-                startGraphConnection = null;
-            }
-            if (graphConnection == null) {
-                break;
-            }
+        }
+        while (!priorityQueue.isEmpty()) {
+            GraphConnection<T> graphConnection = priorityQueue.poll();
             // it is possible if we f.e. already found a less weighted pass to this indirectConnection
             if (resultSet.contains(graphConnection)) {
                 continue;
@@ -91,7 +79,11 @@ public class Graph<T> {
             T indirectConnectionInstance = indirectConnection.getInstance();
             int graphWeight = graphConnection.getOverallWeight();
 
-            for (Connection<T> connection : nodeListMap.get(indirectConnectionInstance)) {
+            List<Connection<T>> connections = nodeListMap.get(indirectConnectionInstance);
+            if (connections == null) {
+                continue;
+            }
+            for (Connection<T> connection : connections) {
                 if (connection.getInstance().equals(start) || resultSet.contains(new GraphConnection<>(connection))) {
                     continue;
                 }

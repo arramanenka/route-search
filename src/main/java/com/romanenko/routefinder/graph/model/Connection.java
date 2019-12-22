@@ -1,15 +1,17 @@
-package com.romanenko.routefinder.graph;
+package com.romanenko.routefinder.graph.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @RequiredArgsConstructor
 public class Connection<T> {
+
     private final T instance;
+    /**
+     * Weight of the connection to this node
+     */
     @EqualsAndHashCode.Exclude
-    private int weight;
+    private final int weight;
 }

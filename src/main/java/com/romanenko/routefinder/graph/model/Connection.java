@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class Connection<T> {
 
-    private final T instance;
+    private final T connectedInstance;
     /**
      * Weight of the connection to this node
      */

@@ -2,8 +2,7 @@ package com.romanenko.routefinder.graph;
 
 import com.romanenko.routefinder.graph.model.Connection;
 
-import java.util.List;
-import java.util.Set;
+import java.util.Collection;
 import java.util.function.BiConsumer;
 
 public interface Graph<T> {
@@ -23,7 +22,7 @@ public interface Graph<T> {
      * @param maxWeight depicts max weight (sum of weights in indirect case)
      * @return list of connections, which contain destination node and weight it will take to get to it
      */
-    Set<T> getReachableNodes(T start, int maxWeight);
+    Collection<T> getReachableNodes(T start, int maxWeight);
 
-    void iterate(BiConsumer<T, List<Connection<T>>> consumer);
+    void iterate(BiConsumer<T, Connection<T>> consumer);
 }

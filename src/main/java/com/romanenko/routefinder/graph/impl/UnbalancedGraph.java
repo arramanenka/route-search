@@ -4,13 +4,13 @@ import com.romanenko.routefinder.graph.Graph;
 import com.romanenko.routefinder.graph.MutableGraph;
 import com.romanenko.routefinder.graph.model.Connection;
 import com.romanenko.routefinder.graph.model.GraphConnection;
-import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * Basic graph implementation, not threadsafe
@@ -18,7 +18,6 @@ import java.util.function.BiConsumer;
  * @param <T> type of node instances
  */
 @ToString
-@EqualsAndHashCode
 public class UnbalancedGraph<T> implements MutableGraph<T> {
 
     final MultiValueMap<T, Connection<T>> nodeListMap = new LinkedMultiValueMap<>();
@@ -26,26 +25,27 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
     @Override
     public Set<T> getReachableNodes(T start, int maxWeight) {
         Set<T> result = new HashSet<>();
-        getGraphConnections(start, maxWeight, (owner, connection) -> result.add(connection.getInstance()));
+        getGraphConnections(start, maxWeight, (graphConnection) -> result.add(graphConnection.getConnection().getConnectedInstance()));
         return result;
     }
 
     @Override
     public Graph<T> getOptimalGraph(T start, int maxWeight) {
-        UnbalancedGraph<T> resultGraph = new UnbalancedGraph<>();
-
-        getGraphConnections(start, maxWeight, resultGraph::add);
-
-        return resultGraph;
+        LinkedList<GraphConnection<T>> resultList = new LinkedList<>();
+        getGraphConnections(start, maxWeight, resultList::add);
+        // do to the nature of algorithm, we find optimal graph by going through least weighted connections,
+        // thus list is presorted
+        return new OptimizedGraph<>(start, resultList, true);
     }
 
-    private void getGraphConnections(T start, int maxWeight, BiConsumer<T, Connection<T>> onNewGraphFound) {
+    private void getGraphConnections(T start, int maxWeight, Consumer<GraphConnection<T>> onNewGraphFound) {
+        Set<GraphConnection<T>> resultSet = new HashSet<>();
+
         List<Connection<T>> startConnections = nodeListMap.get(start);
         if (startConnections == null) {
             return;
         }
 
-        Set<GraphConnection<T>> resultSet = new HashSet<>();
         PriorityQueue<GraphConnection<T>> priorityQueue = new PriorityQueue<>();
 
         for (Connection<T> connection : startConnections) {
@@ -60,14 +60,14 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
                 continue;
             } else {
                 resultSet.add(graphConnection);
-                onNewGraphFound.accept(graphConnection.getOwner(), graphConnection.getConnection());
+                onNewGraphFound.accept(graphConnection);
             }
             Connection<T> indirectConnection = graphConnection.getConnection();
-            T indirectConnectionInstance = indirectConnection.getInstance();
+            T indirectConnectionInstance = indirectConnection.getConnectedInstance();
             int graphWeight = graphConnection.getOverallWeight();
 
             for (Connection<T> connection : nodeListMap.get(indirectConnectionInstance)) {
-                if (connection.getInstance().equals(start) || resultSet.contains(new GraphConnection<>(connection))) {
+                if (connection.getConnectedInstance().equals(start) || resultSet.contains(new GraphConnection<>(connection))) {
                     continue;
                 }
                 int overallWeight = graphWeight + connection.getWeight();
@@ -80,35 +80,52 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
     }
 
     @Override
-    public void add(T node, Connection<T> connection) {
-        nodeListMap.add(node, connection);
-        nodeListMap.computeIfAbsent(connection.getInstance(), e -> new LinkedList<>())
-                .add(new Connection<>(node, connection.getWeight()));
-    }
-
-    @Override
-    public void add(T node, Iterable<Connection<T>> connections) {
-        for (Connection<T> connection : connections) {
-            add(node, connection);
-        }
-    }
-
-    @Override
     public void add(Graph<T> graph) {
         graph.iterate(this::add);
+    }
+
+    @Override
+    public void add(T ownerInstance, T connectedInstance, int weight) {
+        add(ownerInstance, new Connection<>(connectedInstance, weight));
+    }
+
+    @Override
+    public void add(T ownerInstance, Connection<T> connection) {
+        appendElementToMap(ownerInstance, connection);
+        appendElementToMap(connection.getConnectedInstance(), new Connection<>(ownerInstance, connection.getWeight()));
+    }
+
+    //TODO elements in list of values in nodeListMap can be presorted by their weight
+    private void appendElementToMap(T node, Connection<T> connection) {
+        List<Connection<T>> connections = nodeListMap.computeIfAbsent(node, e -> new LinkedList<>());
+        int i = connections.indexOf(connection);
+        if (i == -1) {
+            connections.add(connection);
+        } else {
+            connections.set(i, connection);
+        }
     }
 
     @Override
     public void remove(T node) {
         nodeListMap.remove(node);
         Connection<T> connection = new Connection<>(node, 0);
-        nodeListMap.values().forEach(e -> e.remove(connection));
+        Iterator<Map.Entry<T, List<Connection<T>>>> iterator = nodeListMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<T, List<Connection<T>>> next = iterator.next();
+            List<Connection<T>> connections = next.getValue();
+            if (connections.isEmpty() || connections.remove(connection)) {
+                iterator.remove();
+            }
+        }
     }
 
     @Override
-    public void iterate(BiConsumer<T, List<Connection<T>>> consumer) {
+    public void iterate(BiConsumer<T, Connection<T>> consumer) {
         for (Map.Entry<T, List<Connection<T>>> tListEntry : nodeListMap.entrySet()) {
-            consumer.accept(tListEntry.getKey(), tListEntry.getValue());
+            for (Connection<T> tConnection : tListEntry.getValue()) {
+                consumer.accept(tListEntry.getKey(), tConnection);
+            }
         }
     }
 }

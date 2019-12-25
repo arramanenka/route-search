@@ -24,5 +24,7 @@ public interface Graph<T> {
      */
     Collection<T> getReachableNodes(T start, int maxWeight);
 
+    boolean contains(T node);
+
     void iterate(BiConsumer<T, Connection<T>> consumer);
 }

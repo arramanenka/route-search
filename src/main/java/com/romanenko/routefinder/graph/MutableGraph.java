@@ -4,7 +4,9 @@ import com.romanenko.routefinder.graph.model.Connection;
 
 public interface MutableGraph<T> extends Graph<T> {
 
-    void add(T ownerInstance, T connectedInstance, int weight);
+    default void add(T ownerInstance, T connectedInstance, int weight) {
+        add(ownerInstance, new Connection<>(connectedInstance, weight));
+    }
 
     void add(T ownerInstance, Connection<T> connection);
 

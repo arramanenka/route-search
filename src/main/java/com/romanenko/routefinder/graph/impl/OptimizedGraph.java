@@ -63,6 +63,19 @@ public class OptimizedGraph<T> implements Graph<T> {
     }
 
     @Override
+    public boolean contains(T node) {
+        if (start.equals(node)) {
+            return true;
+        }
+        for (GraphConnection<T> graphConnection : graphConnections) {
+            if (graphConnection.getConnection().getConnectedInstance().equals(node)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void iterate(BiConsumer<T, Connection<T>> consumer) {
         for (GraphConnection<T> graphConnection : graphConnections) {
             consumer.accept(graphConnection.getOwner(), graphConnection.getConnection());

@@ -85,11 +85,6 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
     }
 
     @Override
-    public void add(T ownerInstance, T connectedInstance, int weight) {
-        add(ownerInstance, new Connection<>(connectedInstance, weight));
-    }
-
-    @Override
     public void add(T ownerInstance, Connection<T> connection) {
         appendElementToMap(ownerInstance, connection);
         appendElementToMap(connection.getConnectedInstance(), new Connection<>(ownerInstance, connection.getWeight()));
@@ -118,6 +113,11 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
                 iterator.remove();
             }
         }
+    }
+
+    @Override
+    public boolean contains(T node) {
+        return nodeListMap.containsKey(node);
     }
 
     @Override

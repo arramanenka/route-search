@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 
@@ -53,6 +53,8 @@ class GraphTest {
         assertEquals(unbalancedGraph.nodeListMap.get(6).size(), 1);
         assertEquals(unbalancedGraph.nodeListMap.get(5).get(0).getWeight(), 10);
         assertEquals(unbalancedGraph.nodeListMap.get(6).get(0).getWeight(), 10);
+        assertFalse(unbalancedGraph.contains(1));
+        assertTrue(unbalancedGraph.contains(5));
     }
 
     @Test
@@ -125,6 +127,43 @@ class GraphTest {
                 .containsExactlyInAnyOrderElementsOf(fullGraph.getReachableNodes(1, 3));
         assertThat(optimalGraph.getReachableNodes(66, 6))
                 .containsExactlyInAnyOrderElementsOf(fullGraph.getReachableNodes(66, 6));
+    }
+
+    @Test
+    void testGraphContainsForBothKeysAndValues() {
+        LinkedList<GraphConnection<Integer>> connections = new LinkedList<>();
+        connections.add(new GraphConnection<>(new Connection<>(3, 3), 1, 3));
+        OptimizedGraph<Integer> optimizedGraph = new OptimizedGraph<>(1, connections, false);
+
+        CachedGraph<Integer> cachedGraph = new CachedGraph<>();
+        cachedGraph.add(optimizedGraph);
+
+        assertTrue(optimizedGraph.contains(1));
+        assertTrue(optimizedGraph.contains(3));
+        assertFalse(optimizedGraph.contains(4));
+
+        assertTrue(cachedGraph.contains(1));
+        assertTrue(cachedGraph.contains(3));
+        assertFalse(cachedGraph.contains(4));
+    }
+
+    @Test
+    void testCachedGraphCaching() {
+        // prep
+        CachedGraph<Integer> cachedGraph = new CachedGraph<>();
+        cachedGraph.add(1, 2, 3);
+        cachedGraph.add(1, 5, 7);
+        // act
+        Graph<Integer> optimalGraph = cachedGraph.getOptimalGraph(1, 3);
+        // assert
+        assertEquals(1, cachedGraph.cache.size());
+        assertGraphEquals(optimalGraph, cachedGraph.getOptimalGraph(1, 3));
+        assertEquals(optimalGraph.getReachableNodes(1, 3), cachedGraph.getReachableNodes(1, 3));
+
+        // act
+        cachedGraph.remove(5);
+        // assert
+        assertEquals(0, cachedGraph.cache.size());
     }
 
     private <T> void assertGraphEquals(Graph<T> left, Graph<T> right) {

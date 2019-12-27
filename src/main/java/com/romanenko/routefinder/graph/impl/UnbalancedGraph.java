@@ -32,7 +32,9 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
     @Override
     public Graph<T> getOptimalGraph(T start, int maxWeight) {
         LinkedList<GraphConnection<T>> resultList = new LinkedList<>();
-        getGraphConnections(start, maxWeight, resultList::add);
+        if (maxWeight > 0) {
+            getGraphConnections(start, maxWeight, resultList::add);
+        }
         // do to the nature of algorithm, we find optimal graph by going through least weighted connections,
         // thus list is presorted
         return new OptimizedGraph<>(start, resultList, true);

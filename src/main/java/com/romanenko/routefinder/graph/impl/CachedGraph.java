@@ -3,6 +3,7 @@ package com.romanenko.routefinder.graph.impl;
 import com.romanenko.routefinder.graph.Graph;
 import com.romanenko.routefinder.graph.MutableGraph;
 import com.romanenko.routefinder.graph.model.Connection;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.util.Collection;
@@ -20,6 +21,8 @@ public class CachedGraph<T> implements MutableGraph<T> {
 
     final Map<T, Graph<T>> cache = new HashMap<>();
     private final MutableGraph<T> originalGraph = new UnbalancedGraph<>();
+    @Setter
+    private int maxDistanceCached = Integer.MAX_VALUE;
 
     @Override
     public void add(T ownerInstance, Connection<T> connection) {
@@ -52,11 +55,21 @@ public class CachedGraph<T> implements MutableGraph<T> {
 
     @Override
     public Graph<T> getOptimalGraph(T start, int maxWeight) {
+        if (maxWeight >= maxDistanceCached) {
+            synchronized (originalGraph) {
+                return originalGraph.getOptimalGraph(start, maxWeight);
+            }
+        }
         return getCachedGraph(start).getOptimalGraph(start, maxWeight);
     }
 
     @Override
     public Collection<T> getReachableNodes(T start, int maxWeight) {
+        if (maxWeight >= maxDistanceCached) {
+            synchronized (originalGraph) {
+                return originalGraph.getReachableNodes(start, maxWeight);
+            }
+        }
         return getCachedGraph(start).getReachableNodes(start, maxWeight);
     }
 
@@ -65,7 +78,7 @@ public class CachedGraph<T> implements MutableGraph<T> {
             synchronized (originalGraph) {
                 Graph<T> graph = cache.get(node);
                 if (graph == null) {
-                    return originalGraph.getOptimalGraph(node, Integer.MAX_VALUE);
+                    return originalGraph.getOptimalGraph(node, maxDistanceCached);
                 }
                 return graph;
             }

@@ -31,7 +31,7 @@ public class OptimizedGraph<T> implements Graph<T> {
 
     @Override
     public Graph<T> getOptimalGraph(T start, int maxWeight) {
-        if (!this.start.equals(start)) {
+        if (!this.start.equals(start) || maxWeight <= 0) {
             return new OptimizedGraph<>(start, new LinkedList<>(), true);
         }
         if (this.maxWeight <= maxWeight) {

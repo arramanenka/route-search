@@ -109,6 +109,23 @@ class UnbalancedGraphTest {
     }
 
     @Test
+    void testGraphConnectionWeightDistributionNotAffectingAlgorithm() {
+        UnbalancedGraph<Integer> unbalancedGraph = new UnbalancedGraph<>();
+        unbalancedGraph.add(1, 2, 1);
+
+        unbalancedGraph.add(2, 3, 500);
+        unbalancedGraph.add(2, 4, 1);
+        unbalancedGraph.add(2, 5, 600);
+
+
+        Set<Integer> reachableNodes = unbalancedGraph.getReachableNodes(1, 2);
+
+        assertEquals(2, reachableNodes.size());
+        assertTrue(reachableNodes.contains(2));
+        assertTrue(reachableNodes.contains(4));
+    }
+
+    @Test
     void testContinuousReachableNodesSearch() {
         //prep
         UnbalancedGraph<Integer> fullGraph = new UnbalancedGraph<>();

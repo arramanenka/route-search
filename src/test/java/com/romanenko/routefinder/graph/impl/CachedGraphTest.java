@@ -7,12 +7,14 @@ import static com.romanenko.routefinder.graph.impl.GraphTestUtil.assertGraphEqua
 import static com.romanenko.routefinder.graph.impl.GraphTestUtil.assertResultForParametersOutOfGraphIsEmpty;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class CachedGraphTest {
+class CachedGraphTest {
 
     @Test
     void testGraphReturnEmptyResultsForIncorrectQueries() {
-        CachedGraph<Integer> cachedGraph = new CachedGraph<>();
-        cachedGraph.add(1, 2, 3);
+        UnbalancedGraph<Integer> source = new UnbalancedGraph<>();
+        source.add(1, 2, 3);
+
+        CachedGraph<Integer> cachedGraph = new CachedGraph<>(source);
 
         assertResultForParametersOutOfGraphIsEmpty(cachedGraph);
         // Double checking cached graph implementation just in case there were some troubles after caching
@@ -20,9 +22,33 @@ public class CachedGraphTest {
     }
 
     @Test
+    void testGraphCorrectWorkingForQueriesExceedingMaxCachedWeight() {
+        UnbalancedGraph<Integer> source = new UnbalancedGraph<>();
+        source.add(1, 2, 3);
+        source.add(2, 3, 4);
+        source.add(3, 5, 6);
+
+        CachedGraph<Integer> cachedGraph = new CachedGraph<>(source);
+        cachedGraph.setMaxCachedWeight(0);
+
+        assertGraphEquals(
+                source.getOptimalGraph(1, 6),
+                cachedGraph.getOptimalGraph(1, 6)
+        );
+        assertTrue(cachedGraph.cache.isEmpty());
+        assertEquals(
+                source.getReachableNodes(1, 6),
+                cachedGraph.getReachableNodes(1, 6)
+        );
+        assertTrue(cachedGraph.cache.isEmpty());
+
+    }
+
+    @Test
     void testGraphContainsForBothKeysAndValues() {
-        CachedGraph<Integer> cachedGraph = new CachedGraph<>();
-        cachedGraph.add(1, 3, 4);
+        UnbalancedGraph<Integer> source = new UnbalancedGraph<>();
+        source.add(1, 3, 4);
+        CachedGraph<Integer> cachedGraph = new CachedGraph<>(source);
 
         assertTrue(cachedGraph.contains(1));
         assertTrue(cachedGraph.contains(3));
@@ -32,18 +58,15 @@ public class CachedGraphTest {
     @Test
     void testGraphCaching() {
         // prep
-        CachedGraph<Integer> cachedGraph = new CachedGraph<>();
-        cachedGraph.add(1, 2, 3);
-        cachedGraph.add(1, 5, 7);
+        UnbalancedGraph<Integer> source = new UnbalancedGraph<>();
+        source.add(1, 2, 3);
+        source.add(1, 5, 7);
+        CachedGraph<Integer> cachedGraph = new CachedGraph<>(source);
         // act
         Graph<Integer> optimalGraph = cachedGraph.getOptimalGraph(1, 3);
         // assert
         assertEquals(1, cachedGraph.cache.size());
         assertGraphEquals(optimalGraph, cachedGraph.getOptimalGraph(1, 3));
         assertEquals(optimalGraph.getReachableNodes(1, 3), cachedGraph.getReachableNodes(1, 3));
-        // act
-        cachedGraph.remove(5);
-        // assert
-        assertEquals(0, cachedGraph.cache.size());
     }
 }

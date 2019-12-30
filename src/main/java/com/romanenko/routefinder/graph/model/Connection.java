@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
-public class Connection<T> {
+public class Connection<T> implements Comparable<Connection<T>>{
 
     private final T connectedInstance;
     /**
@@ -14,4 +14,9 @@ public class Connection<T> {
      */
     @EqualsAndHashCode.Exclude
     private final int weight;
+
+    @Override
+    public int compareTo(Connection<T> o) {
+        return Integer.compare(this.weight, o.weight);
+    }
 }

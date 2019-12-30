@@ -1,7 +1,6 @@
 package com.romanenko.routefinder.graph.impl;
 
 import com.romanenko.routefinder.graph.Graph;
-import com.romanenko.routefinder.graph.MutableGraph;
 import com.romanenko.routefinder.graph.model.Connection;
 import lombok.Setter;
 import lombok.ToString;
@@ -11,41 +10,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-/**
- * Thread safe implementation of {@link MutableGraph} backed by {@link UnbalancedGraph}
- *
- * @param <T>
- */
 @ToString
-public class CachedGraph<T> implements MutableGraph<T> {
+public class CachedGraph<T> implements Graph<T> {
 
     final Map<T, Graph<T>> cache = new HashMap<>();
-    private final MutableGraph<T> originalGraph = new UnbalancedGraph<>();
+    private final Graph<T> originalGraph;
     @Setter
-    private int maxDistanceCached = Integer.MAX_VALUE;
+    private int maxCachedWeight = Integer.MAX_VALUE;
 
-    @Override
-    public void add(T ownerInstance, Connection<T> connection) {
-        synchronized (originalGraph) {
-            originalGraph.add(ownerInstance, connection);
-            cache.clear();
-        }
-    }
-
-    @Override
-    public void add(Graph<T> graph) {
-        synchronized (originalGraph) {
-            originalGraph.add(graph);
-            cache.clear();
-        }
-    }
-
-    @Override
-    public void remove(T node) {
-        synchronized (originalGraph) {
-            originalGraph.remove(node);
-            cache.entrySet().removeIf(tGraphEntry -> tGraphEntry.getValue().contains(node));
-        }
+    public CachedGraph(Graph<T> originalGraph) {
+        this.originalGraph = originalGraph;
     }
 
     @Override
@@ -55,30 +29,34 @@ public class CachedGraph<T> implements MutableGraph<T> {
 
     @Override
     public Graph<T> getOptimalGraph(T start, int maxWeight) {
-        if (maxWeight >= maxDistanceCached) {
-            synchronized (originalGraph) {
-                return originalGraph.getOptimalGraph(start, maxWeight);
-            }
+        if (maxWeight >= maxCachedWeight) {
+            return originalGraph.getOptimalGraph(start, maxWeight);
         }
         return getCachedGraph(start).getOptimalGraph(start, maxWeight);
     }
 
     @Override
     public Collection<T> getReachableNodes(T start, int maxWeight) {
-        if (maxWeight >= maxDistanceCached) {
-            synchronized (originalGraph) {
-                return originalGraph.getReachableNodes(start, maxWeight);
-            }
+        if (maxWeight >= maxCachedWeight) {
+            return originalGraph.getReachableNodes(start, maxWeight);
         }
         return getCachedGraph(start).getReachableNodes(start, maxWeight);
     }
 
+    // TODO: consider caching less, since now it is not memory efficient, although faster.
+    //  As of right now we technically repeat ourselves by caching from every starting node.
+    //  however, it is not memory efficient if we consider that some nodes have bigger "centrality"
+    //  in case we have nodes connected in following way(in square brackets are weights of graph connections):
+    //    5---[10]---1---[1]---2---[1]---3
+    //  7-[]-6-[9]_/            \_[1]---4
+    //  why should we cache 1 node, when technically we could get all nodes around < than desired weight and then call
+    //  optimal graph from cache for those nodes.
     private Graph<T> getCachedGraph(T start) {
         return cache.computeIfAbsent(start, node -> {
             synchronized (originalGraph) {
                 Graph<T> graph = cache.get(node);
                 if (graph == null) {
-                    return originalGraph.getOptimalGraph(node, maxDistanceCached);
+                    return originalGraph.getOptimalGraph(node, maxCachedWeight);
                 }
                 return graph;
             }
@@ -87,8 +65,6 @@ public class CachedGraph<T> implements MutableGraph<T> {
 
     @Override
     public void iterate(BiConsumer<T, Connection<T>> consumer) {
-        synchronized (originalGraph) {
-            originalGraph.iterate(consumer);
-        }
+        originalGraph.iterate(consumer);
     }
 }

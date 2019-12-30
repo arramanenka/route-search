@@ -7,11 +7,12 @@ import lombok.NonNull;
 import lombok.ToString;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.function.BiConsumer;
 
 @ToString
-public class OptimizedGraph<T> implements Graph<T> {
+class OptimizedGraph<T> implements Graph<T> {
     private final T start;
     private final LinkedList<GraphConnection<T>> graphConnections;
     private final int maxWeight;
@@ -25,7 +26,7 @@ public class OptimizedGraph<T> implements Graph<T> {
         if (graphConnections.size() > 0) {
             maxWeight = graphConnections.getLast().getOverallWeight();
         } else {
-            maxWeight = Integer.MAX_VALUE;
+            maxWeight = 0;
         }
     }
 
@@ -59,7 +60,7 @@ public class OptimizedGraph<T> implements Graph<T> {
             }
             return resultList;
         }
-        return new LinkedList<>();
+        return Collections.emptyList();
     }
 
     @Override

@@ -35,11 +35,12 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
         if (maxWeight > 0) {
             getGraphConnections(start, maxWeight, resultList::add);
         }
-        // do to the nature of algorithm, we find optimal graph by going through least weighted connections,
+        // due to the nature of algorithm, we find optimal graph by going through least weighted connections,
         // thus list is presorted
         return new OptimizedGraph<>(start, resultList, true);
     }
 
+    // todo: expose consumer. This would be hella useful for further moving to reactive controller
     private void getGraphConnections(T start, int maxWeight, Consumer<GraphConnection<T>> onNewGraphFound) {
         Set<GraphConnection<T>> resultSet = new HashSet<>();
 
@@ -92,7 +93,8 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
         appendElementToMap(connection.getConnectedInstance(), new Connection<>(ownerInstance, connection.getWeight()));
     }
 
-    //TODO elements in list of values in nodeListMap can be presorted by their weight
+    //TODO elements in list of values in nodeListMap can be presorted by their weight,
+    // this way once we hit element exceeding certain weight, we can break instead of checking every connection
     private void appendElementToMap(T node, Connection<T> connection) {
         List<Connection<T>> connections = nodeListMap.computeIfAbsent(node, e -> new LinkedList<>());
         int i = connections.indexOf(connection);

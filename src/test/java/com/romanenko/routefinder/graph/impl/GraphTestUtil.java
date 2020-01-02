@@ -31,34 +31,21 @@ public class GraphTestUtil {
             List<Connection<T>> nodeConnections = connections.get(node);
             if (CollectionUtils.isEmpty(nodeConnections)) {
                 throw new AssertionError(String.format(
-                        """
-                        Could not find any rightGraphsConnection %s from node %s in left graph.
-                        Inspected graphs:
-                        %s
-                        %s
-                        """, rightGraphsConnection, node, left, right
+                        "Could not find any rightGraphsConnection %s from node %s in left graph.\nInspected graphs:\n%s\n%s\n",
+                        rightGraphsConnection, node, left, right
                 ));
             }
             int i = nodeConnections.indexOf(rightGraphsConnection);
             if (i == -1) {
                 throw new AssertionError(String.format(
-                        """
-                        Left graph does not contain rightGraphsConnection %s from node %s. Inspected graphs:
-                        %s
-                        %s
-                        """,
+                        "Left graph does not contain rightGraphsConnection %s from node %s. Inspected graphs:\n%s\n%s\n",
                         rightGraphsConnection, node, left, right
                 ));
             }
             Connection<T> leftGraphsConnection = nodeConnections.get(i);
             if (leftGraphsConnection.getWeight() != rightGraphsConnection.getWeight()) {
                 throw new AssertionError(String.format(
-                        """
-                        Left and right graph's connections %s and %s have different weights.
-                        Inspected graphs:
-                        %s
-                        %s
-                        """,
+                        "Left and right graph's connections %s and %s have different weights.\nInspected graphs:\n%s\n%s\n",
                         leftGraphsConnection, rightGraphsConnection, left, right
                 ));
             }
@@ -69,10 +56,7 @@ public class GraphTestUtil {
         });
         if (!connections.isEmpty()) {
             throw new AssertionError(String.format(
-                    """
-                    Left graph contains elements which are not present in the right one:
-                    %s
-                    """, connections
+                    "Left graph contains elements which are not present in the right one:\n%s", connections
             ));
         }
     }

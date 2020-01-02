@@ -14,6 +14,7 @@ import java.util.function.Consumer;
 
 /**
  * Basic graph implementation, not threadsafe
+ * Recursive connections (instance having connection with itself) will be ignored
  *
  * @param <T> type of node instances
  */
@@ -89,6 +90,10 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
 
     @Override
     public void add(T ownerInstance, Connection<T> connection) {
+        // do not allow recursive connections
+        if (connection.getConnectedInstance().equals(ownerInstance)) {
+            return;
+        }
         appendElementToMap(ownerInstance, connection);
         appendElementToMap(connection.getConnectedInstance(), new Connection<>(ownerInstance, connection.getWeight()));
     }

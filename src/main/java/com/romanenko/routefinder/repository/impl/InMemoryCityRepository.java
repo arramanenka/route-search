@@ -40,10 +40,16 @@ public class InMemoryCityRepository implements CityRepository {
     @Autowired
     public void loadCities(CityDao cityDao) {
         UnbalancedGraph<String> cityGraph = new UnbalancedGraph<>();
+        int connectionCount = 0;
         for (CityConnection cityConnection : cityDao.findAllRoadConnections()) {
-            cityGraph.add(cityConnection.getFromCity().getCityName(), cityConnection.getToCity().getCityName(), cityConnection.getTime());
-            log.info(cityConnection);
+            cityGraph.add(
+                    cityConnection.getFromCity().getCityName(),
+                    cityConnection.getToCity().getCityName(),
+                    cityConnection.getTime()
+            );
+            connectionCount++;
         }
+        log.info("Loaded " + connectionCount + " connections");
         this.cities = new CachedGraph<>(cityGraph);
     }
 }

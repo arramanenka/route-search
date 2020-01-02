@@ -6,14 +6,14 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 
 @ToString
 public class CachedGraph<T> implements Graph<T> {
 
-    final Map<T, Graph<T>> cache = new HashMap<>();
+    final Map<T, Graph<T>> cache = new ConcurrentHashMap<>();
     private final Graph<T> originalGraph;
     @Setter
     private int maxCachedWeight = Integer.MAX_VALUE;
@@ -52,15 +52,7 @@ public class CachedGraph<T> implements Graph<T> {
     //  why should we cache 1 node, when technically we could get all nodes around < than desired weight and then call
     //  optimal graph from cache for those nodes.
     private Graph<T> getCachedGraph(T start) {
-        return cache.computeIfAbsent(start, node -> {
-            synchronized (originalGraph) {
-                Graph<T> graph = cache.get(node);
-                if (graph == null) {
-                    return originalGraph.getOptimalGraph(node, maxCachedWeight);
-                }
-                return graph;
-            }
-        });
+        return cache.computeIfAbsent(start, node -> originalGraph.getOptimalGraph(node, maxCachedWeight));
     }
 
     @Override

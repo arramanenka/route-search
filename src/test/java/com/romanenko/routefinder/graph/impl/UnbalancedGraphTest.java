@@ -126,6 +126,15 @@ class UnbalancedGraphTest {
     }
 
     @Test
+    void testRecursiveGraphConnectionNotAdded() {
+        UnbalancedGraph<Integer> intGraph = new UnbalancedGraph<>();
+
+        intGraph.add(1, 1, 10);
+
+        assertFalse(intGraph.nodeListMap.containsKey(1));
+    }
+
+    @Test
     void testContinuousReachableNodesSearch() {
         //prep
         UnbalancedGraph<Integer> fullGraph = new UnbalancedGraph<>();

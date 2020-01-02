@@ -20,21 +20,17 @@ public class CommuteRangeController {
     private final CityService cityService;
 
     @ApiOperation(
-            value = "getReachableCities", notes =
-            """
-            Given starting city and maximum minutes to travel, determine which cities are reachable.
-            E.g.
-            Assume there are cities 1, 2 and 3
-            Assume that it takes 20 minutes to get from city 1 to 2; 40 minutes to get from city 1 to 3
-
-            This method will return:
-            from city 1:
-            [2] for 20-39 minutes;
-            [2, 3] for 40+ minutes;
-            from city 3:
-            [1] for 40-59 minutes;
-            [1, 2] for 60+ minutes;
-            """
+            value = "getReachableCities", notes = "Given starting city and maximum minutes to travel, " +
+            "determine which cities are reachable.\n" +
+            "E.g.Assume there are cities 1, 2 and 3\n" +
+            "Assume that it takes 20 minutes to get from city 1 to 2; 40 minutes to get from city 1 to 3\n" +
+            "This method will return:\n" +
+            "from city 1:\n" +
+            "[2] for 20-39 minutes;\n" +
+            "[2, 3] for 40+ minutes;\n" +
+            "from city 3:\n" +
+            "[1] for 40-59 minutes;\n" +
+            "[1, 2] for 60+ minutes;\n"
     )
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully retrieved list of reachable cities")

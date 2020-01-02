@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 
 @Data
 @RequiredArgsConstructor
-public class Connection<T> implements Comparable<Connection<T>>{
+public class Connection<T> implements Comparable<Connection<T>> {
 
     private final T connectedInstance;
     /**

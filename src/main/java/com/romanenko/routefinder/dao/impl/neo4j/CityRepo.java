@@ -12,7 +12,7 @@ public interface CityRepo extends Neo4jRepository<City, Long> {
      * connections that cost more than indirect connections.
      */
     @Query("Match(n:City {name:{0}}) " +
-            "call algo.bfs.stream(\"City\", \"CityConnection\", \"BOTH\", id(n), {maxCost:{1}, weightProperty:'time'}) " +
+            "call algo.bfs.stream(\"City\", \"CityConnection\", \"OUTGOING\", id(n), {maxCost:{1}, weightProperty:'time'}) " +
             "yield nodeIds " +
             "unwind nodeIds as nodeId " +
             "return algo.asNode(nodeId)")

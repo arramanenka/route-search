@@ -3,6 +3,7 @@ city:
     type: in_memory
   dao:
     type: neo4j
+    generateOnStart: true
 
 spring:
   data:

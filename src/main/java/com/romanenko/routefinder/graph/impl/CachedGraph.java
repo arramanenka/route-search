@@ -2,6 +2,7 @@ package com.romanenko.routefinder.graph.impl;
 
 import com.romanenko.routefinder.graph.Graph;
 import com.romanenko.routefinder.graph.model.Connection;
+import com.romanenko.routefinder.graph.model.GraphConnection;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -9,6 +10,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 @ToString
 public class CachedGraph<T> implements Graph<T> {
@@ -29,18 +31,17 @@ public class CachedGraph<T> implements Graph<T> {
 
     @Override
     public Graph<T> getOptimalGraph(T start, int maxWeight) {
-        if (maxWeight >= maxCachedWeight) {
-            return originalGraph.getOptimalGraph(start, maxWeight);
-        }
-        return getCachedGraph(start).getOptimalGraph(start, maxWeight);
+        return getGraphForSearch(start, maxWeight).getOptimalGraph(start, maxWeight);
     }
 
     @Override
     public Collection<T> getReachableNodes(T start, int maxWeight) {
-        if (maxWeight >= maxCachedWeight) {
-            return originalGraph.getReachableNodes(start, maxWeight);
-        }
-        return getCachedGraph(start).getReachableNodes(start, maxWeight);
+        return getGraphForSearch(start, maxWeight).getReachableNodes(start, maxWeight);
+    }
+
+    @Override
+    public void forEachReachableNode(T start, int maxWeight, Consumer<GraphConnection<T>> action) {
+        getGraphForSearch(start, maxWeight).forEachReachableNode(start, maxWeight, action);
     }
 
     // TODO: consider caching less, since now it is not memory efficient, although faster.
@@ -51,7 +52,10 @@ public class CachedGraph<T> implements Graph<T> {
     //  7-[]-6-[9]_/            \_[1]---4
     //  why should we cache 1 node, when technically we could get all nodes around < than desired weight and then call
     //  optimal graph from cache for those nodes.
-    private Graph<T> getCachedGraph(T start) {
+    private Graph<T> getGraphForSearch(T start, int maxWeight) {
+        if (maxWeight > maxCachedWeight) {
+            return originalGraph;
+        }
         return cache.computeIfAbsent(start, node -> originalGraph.getOptimalGraph(node, maxCachedWeight));
     }
 

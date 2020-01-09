@@ -51,7 +51,7 @@ class UnbalancedGraphTest {
         UnbalancedGraph<Integer> graph = new UnbalancedGraph<>();
         graph.add(optimizedGraph);
         graph.add(1, 3, 3);
-        graph.add(1, 4, 3);
+        graph.add(1, 4, 4);
         graph.add(2, 4, 3);
         // act
         Graph<Integer> subGraph = graph.getOptimalGraph(1, 10);
@@ -151,5 +151,19 @@ class UnbalancedGraphTest {
                 .containsExactlyInAnyOrderElementsOf(fullGraph.getReachableNodes(1, 3));
         assertThat(optimalGraph.getReachableNodes(66, 6))
                 .containsExactlyInAnyOrderElementsOf(fullGraph.getReachableNodes(66, 6));
+    }
+
+    @Test
+    void testNonBidirectional() {
+        UnbalancedGraph<Integer> nonBidiGraph = new UnbalancedGraph<>();
+        nonBidiGraph.setBiDirectional(false);
+        nonBidiGraph.add(1, 2, 1);
+        nonBidiGraph.add(2, 3, 1);
+        nonBidiGraph.add(3, 4, 1);
+
+        assertEquals(3, nonBidiGraph.getReachableNodes(1, 3).size());
+        assertEquals(2, nonBidiGraph.getReachableNodes(2, Integer.MAX_VALUE).size());
+        assertEquals(1, nonBidiGraph.getReachableNodes(3, Integer.MAX_VALUE).size());
+        assertEquals(0, nonBidiGraph.getReachableNodes(4, Integer.MAX_VALUE).size());
     }
 }

@@ -4,13 +4,15 @@ import com.romanenko.routefinder.graph.Graph;
 import com.romanenko.routefinder.graph.MutableGraph;
 import com.romanenko.routefinder.graph.model.Connection;
 import com.romanenko.routefinder.graph.model.GraphConnection;
+import lombok.Setter;
 import lombok.ToString;
+import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.util.*;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
+import java.util.function.*;
 
 /**
  * Basic graph implementation, not threadsafe
@@ -22,11 +24,13 @@ import java.util.function.Consumer;
 public class UnbalancedGraph<T> implements MutableGraph<T> {
 
     final MultiValueMap<T, Connection<T>> nodeListMap = new LinkedMultiValueMap<>();
+    @Setter
+    private boolean biDirectional = true;
 
     @Override
     public Set<T> getReachableNodes(T start, int maxWeight) {
         Set<T> result = new HashSet<>();
-        getGraphConnections(start, maxWeight, (graphConnection) -> result.add(graphConnection.getConnection().getConnectedInstance()));
+        forEachReachableNode(start, maxWeight, (graphConnection) -> result.add(graphConnection.getConnection().getConnectedInstance()));
         return result;
     }
 
@@ -34,22 +38,21 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
     public Graph<T> getOptimalGraph(T start, int maxWeight) {
         LinkedList<GraphConnection<T>> resultList = new LinkedList<>();
         if (maxWeight > 0) {
-            getGraphConnections(start, maxWeight, resultList::add);
+            forEachReachableNode(start, maxWeight, resultList::add);
         }
         // due to the nature of algorithm, we find optimal graph by going through least weighted connections,
         // thus list is presorted
         return new OptimizedGraph<>(start, resultList, true);
     }
 
-    // todo: expose consumer. This would be hella useful for further moving to reactive controller
-    private void getGraphConnections(T start, int maxWeight, Consumer<GraphConnection<T>> onNewGraphFound) {
+    // todo: expose consumer. This would be hella useful for further moving to reactive controller.
+    public void forEachReachableNode(T start, int maxWeight, Consumer<GraphConnection<T>> onNewGraphFound) {
         Set<GraphConnection<T>> resultSet = new HashSet<>();
 
         List<Connection<T>> startConnections = nodeListMap.get(start);
-        if (startConnections == null) {
+        if (CollectionUtils.isEmpty(startConnections)) {
             return;
         }
-
         PriorityQueue<GraphConnection<T>> priorityQueue = new PriorityQueue<>();
 
         for (Connection<T> connection : startConnections) {
@@ -62,30 +65,30 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
             // it is possible if we f.e. already found a less weighted pass to this indirectConnection
             if (resultSet.contains(graphConnection)) {
                 continue;
-            } else {
-                resultSet.add(graphConnection);
-                onNewGraphFound.accept(graphConnection);
             }
-            Connection<T> indirectConnection = graphConnection.getConnection();
-            T indirectConnectionInstance = indirectConnection.getConnectedInstance();
-            int graphWeight = graphConnection.getOverallWeight();
+            resultSet.add(graphConnection);
+            onNewGraphFound.accept(graphConnection);
 
-            for (Connection<T> connection : nodeListMap.get(indirectConnectionInstance)) {
-                if (connection.getConnectedInstance().equals(start) || resultSet.contains(new GraphConnection<>(connection))) {
+            T indirectConnectionInstance = graphConnection.getConnection().getConnectedInstance();
+
+            List<Connection<T>> connections = nodeListMap.get(indirectConnectionInstance);
+            if (CollectionUtils.isEmpty(connections)) {
+                continue;
+            }
+            for (Connection<T> connection : connections) {
+                if (connection.getConnectedInstance().equals(start)
+                        || resultSet.contains(new GraphConnection<>(connection))) {
                     continue;
                 }
-                int overallWeight = graphWeight + connection.getWeight();
-                if (overallWeight <= maxWeight) {
-                    GraphConnection<T> g = new GraphConnection<>(connection, indirectConnectionInstance, overallWeight);
-                    priorityQueue.offer(g);
+                int overallWeight = graphConnection.getOverallWeight() + connection.getWeight();
+                // due to the fact that addition of connections is done in sorted manner, once we reach the element,
+                // that has overallWeight bigger than desired, we can simply skip others, since they will have >= weight
+                if (overallWeight > maxWeight) {
+                    break;
                 }
+                priorityQueue.offer(new GraphConnection<>(connection, indirectConnectionInstance, overallWeight));
             }
         }
-    }
-
-    @Override
-    public void add(Graph<T> graph) {
-        graph.iterate(this::add);
     }
 
     @Override
@@ -95,19 +98,26 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
             return;
         }
         appendElementToMap(ownerInstance, connection);
-        appendElementToMap(connection.getConnectedInstance(), new Connection<>(ownerInstance, connection.getWeight()));
+        if (biDirectional) {
+            appendElementToMap(connection.getConnectedInstance(), new Connection<>(ownerInstance, connection.getWeight()));
+        }
     }
 
-    //TODO elements in list of values in nodeListMap can be presorted by their weight,
-    // this way once we hit element exceeding certain weight, we can break instead of checking every connection
     private void appendElementToMap(T node, Connection<T> connection) {
         List<Connection<T>> connections = nodeListMap.computeIfAbsent(node, e -> new LinkedList<>());
-        int i = connections.indexOf(connection);
-        if (i == -1) {
-            connections.add(connection);
-        } else {
-            connections.set(i, connection);
+        // we need to remove previous connection to the same node to avoid duplicates
+        connections.remove(connection);
+
+        ListIterator<Connection<T>> connectionListIterator = connections.listIterator();
+        while (connectionListIterator.hasNext()) {
+            Connection<T> storedConnection = connectionListIterator.next();
+            if (storedConnection.compareTo(connection) >= 0) {
+                connectionListIterator.previous();
+                connectionListIterator.add(connection);
+                return;
+            }
         }
+        connectionListIterator.add(connection);
     }
 
     @Override

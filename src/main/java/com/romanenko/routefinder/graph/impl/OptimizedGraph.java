@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 @ToString
 class OptimizedGraph<T> implements Graph<T> {
@@ -32,35 +33,32 @@ class OptimizedGraph<T> implements Graph<T> {
 
     @Override
     public Graph<T> getOptimalGraph(T start, int maxWeight) {
-        if (!this.start.equals(start) || maxWeight <= 0) {
-            return new OptimizedGraph<>(start, new LinkedList<>(), true);
-        }
-        if (this.maxWeight <= maxWeight) {
+        if (this.maxWeight <= maxWeight && this.start.equals(start)) {
             return this;
         }
         LinkedList<GraphConnection<T>> resultList = new LinkedList<>();
-        for (GraphConnection<T> graphConnection : this.graphConnections) {
-            if (graphConnection.getOverallWeight() > maxWeight) {
-                break;
-            }
-            resultList.add(graphConnection);
-        }
+        forEachReachableNode(start, maxWeight, resultList::add);
         return new OptimizedGraph<>(start, resultList, true);
     }
 
     @Override
     public Collection<T> getReachableNodes(T start, int maxWeight) {
-        if (this.start.equals(start)) {
-            LinkedList<T> resultList = new LinkedList<>();
-            for (GraphConnection<T> graphConnection : this.graphConnections) {
+        LinkedList<T> resultList = new LinkedList<>();
+        forEachReachableNode(start, maxWeight, graphConnection ->
+                resultList.add(graphConnection.getConnection().getConnectedInstance()));
+        return resultList;
+    }
+
+    @Override
+    public void forEachReachableNode(T start, int maxWeight, Consumer<GraphConnection<T>> action) {
+        if (this.start.equals(start) && maxWeight > 0) {
+            for (GraphConnection<T> graphConnection : graphConnections) {
                 if (graphConnection.getOverallWeight() > maxWeight) {
                     break;
                 }
-                resultList.add(graphConnection.getConnection().getConnectedInstance());
+                action.accept(graphConnection);
             }
-            return resultList;
         }
-        return Collections.emptyList();
     }
 
     @Override

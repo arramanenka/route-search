@@ -4,10 +4,3 @@ city:
   dao:
     type: neo4j
     generateOnStart: true
-
-spring:
-  data:
-    neo4j:
-      password: 1234
-      username: neo4j
-      uri: bolt://localhost:7687

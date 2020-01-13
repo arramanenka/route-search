@@ -33,23 +33,21 @@ if we can get from city a to city b in 5 minutes, then we can also get from city
 - In case question of scalability arises, smart balancing could take place, 
 where each service is responsible for certain graph areas 
 
-## Running neo4j
-For now, unfortunately, there is no composite docker file, so you need to:
-1) Set up neo4j
- - if you want to play around with it, install from https://neo4j.com/download/ (current approach also uses graph.algo, 
-which is plugin for neo4j with implementation of basic algorithms)
- - alternatively, run neo4j in docker with following command:
+### Deployment
+First of all, run `mvn clean install -DskipTests`
+
+Install docker and run:
 ```
-    docker run \
-        --name neo \
-        -p7474:7474 -p7687:7687 \
-        -d \
-    	--env NEO4J_AUTH=none \
-        --env NEO4JLABS_PLUGINS=["graph-algorithms"] \
-        --env NEO4J_dbms_security_procedures_unrestricted=algo\.\* \
-        neo4j:latest
+ docker-compose up 
 ```
+
+Special for lazy people like me:
+```
+mvn clean install -DskipTests && docker-compose up
+```
+## Neo4j
 After you start your graph, you can visit http://localhost:7474/browser/ for visual representation and console
+
 Tip:
 After starting server (or after you prepare data by yourself), you can run:
 ```
@@ -58,12 +56,12 @@ WITH *, relationships(p) AS connection
 where firstCity.name="Lutadmad"
 return p
 ```
-in order to have a view of small portion of a graph, from certain starting point
-## Running server
-All that is required for running is jdk8+ and maven, after which the only thing to be executed is
- ```
- mvn clean install -DskipTests spring-boot:run
-``` 
+in order to have a view of small portion of a graph, from certain starting point; 
+If you want to view whole generated graph, run:
+```
+match (c) return n
+```
+## Server
 By default, server will create 100 cities and create random connections between them,
 where time may vary from 10 to 360 minutes between cities.
 

@@ -33,8 +33,8 @@ public class Neo4jCityDao implements CityDao {
     }
 
     @PostConstruct
-    public void generateSampleData(){
-        if(generateOnStart){
+    public void generateSampleData() {
+        if (generateOnStart) {
             cityRepo.deleteAll();
             cityRepo.generateSampleData();
         }

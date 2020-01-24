@@ -1,4 +1,4 @@
-package com.romanenko.routefinder.graph.impl;
+package com.romanenko.routefinder.graph;
 
 import com.romanenko.routefinder.graph.Graph;
 import com.romanenko.routefinder.graph.model.Connection;
@@ -13,15 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class GraphTestUtil {
 
     private GraphTestUtil() {
-    }
-
-    public static void assertResultForParametersOutOfGraphIsEmpty(Graph<Integer> graph) {
-        assertTrue(graph.getReachableNodes(1, 0).isEmpty());
-        assertTrue(graph.getReachableNodes(0, 10).isEmpty());
-
-        graph.getOptimalGraph(0, 10).iterate((a, b) -> {
-            throw new AssertionError("Graph should be empty");
-        });
     }
 
     public static <T> void assertGraphEquals(Graph<T> left, Graph<T> right) {

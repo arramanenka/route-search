@@ -2,7 +2,7 @@ package com.romanenko.routefinder.graph.impl;
 
 import com.romanenko.routefinder.graph.Graph;
 import com.romanenko.routefinder.graph.model.Connection;
-import com.romanenko.routefinder.graph.model.GraphConnection;
+import com.romanenko.routefinder.graph.model.Edge;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -41,11 +41,11 @@ class UnbalancedGraphTest {
     @Test
     void testOptimalPathGraphCreation() {
         //prep
-        LinkedList<GraphConnection<Integer>> result = new LinkedList<>();
-        result.add(new GraphConnection<>(new Connection<>(2, 1), 1, 1));
-        result.add(new GraphConnection<>(new Connection<>(3, 1), 2, 2));
-        result.add(new GraphConnection<>(new Connection<>(4, 1), 3, 3));
-        result.add(new GraphConnection<>(new Connection<>(5, 1), 3, 3));
+        LinkedList<Edge<Integer>> result = new LinkedList<>();
+        result.add(new Edge<>(new Connection<>(2, 1), 1, 1));
+        result.add(new Edge<>(new Connection<>(3, 1), 2, 2));
+        result.add(new Edge<>(new Connection<>(4, 1), 3, 3));
+        result.add(new Edge<>(new Connection<>(5, 1), 3, 3));
         OptimizedGraph<Integer> optimizedGraph = new OptimizedGraph<>(1, result, false);
 
         UnbalancedGraph<Integer> graph = new UnbalancedGraph<>();

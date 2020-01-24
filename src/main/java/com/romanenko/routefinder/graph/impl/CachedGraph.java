@@ -2,7 +2,7 @@ package com.romanenko.routefinder.graph.impl;
 
 import com.romanenko.routefinder.graph.Graph;
 import com.romanenko.routefinder.graph.model.Connection;
-import com.romanenko.routefinder.graph.model.GraphConnection;
+import com.romanenko.routefinder.graph.model.Edge;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -40,7 +40,7 @@ public class CachedGraph<T> implements Graph<T> {
     }
 
     @Override
-    public void forEachReachableNode(T start, int maxWeight, Consumer<GraphConnection<T>> action) {
+    public void forEachReachableNode(T start, int maxWeight, Consumer<Edge<T>> action) {
         getGraphForSearch(start, maxWeight).forEachReachableNode(start, maxWeight, action);
     }
 

@@ -2,12 +2,11 @@ package com.romanenko.routefinder.graph.impl;
 
 import com.romanenko.routefinder.graph.Graph;
 import com.romanenko.routefinder.graph.model.Connection;
-import com.romanenko.routefinder.graph.model.GraphConnection;
+import com.romanenko.routefinder.graph.model.Edge;
 import lombok.NonNull;
 import lombok.ToString;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -15,17 +14,17 @@ import java.util.function.Consumer;
 @ToString
 class OptimizedGraph<T> implements Graph<T> {
     private final T start;
-    private final LinkedList<GraphConnection<T>> graphConnections;
+    private final LinkedList<Edge<T>> edges;
     private final int maxWeight;
 
-    OptimizedGraph(@NonNull T start, @NonNull LinkedList<GraphConnection<T>> graphConnections, boolean presorted) {
+    OptimizedGraph(@NonNull T start, @NonNull LinkedList<Edge<T>> edges, boolean presorted) {
         this.start = start;
-        this.graphConnections = graphConnections;
+        this.edges = edges;
         if (!presorted) {
-            this.graphConnections.sort(GraphConnection::compareTo);
+            this.edges.sort(Edge::compareTo);
         }
-        if (graphConnections.size() > 0) {
-            maxWeight = graphConnections.getLast().getOverallWeight();
+        if (edges.size() > 0) {
+            maxWeight = edges.getLast().getOverallWeight();
         } else {
             maxWeight = 0;
         }
@@ -36,7 +35,7 @@ class OptimizedGraph<T> implements Graph<T> {
         if (this.maxWeight <= maxWeight && this.start.equals(start)) {
             return this;
         }
-        LinkedList<GraphConnection<T>> resultList = new LinkedList<>();
+        LinkedList<Edge<T>> resultList = new LinkedList<>();
         forEachReachableNode(start, maxWeight, resultList::add);
         return new OptimizedGraph<>(start, resultList, true);
     }
@@ -50,13 +49,13 @@ class OptimizedGraph<T> implements Graph<T> {
     }
 
     @Override
-    public void forEachReachableNode(T start, int maxWeight, Consumer<GraphConnection<T>> action) {
+    public void forEachReachableNode(T start, int maxWeight, Consumer<Edge<T>> action) {
         if (this.start.equals(start) && maxWeight > 0) {
-            for (GraphConnection<T> graphConnection : graphConnections) {
-                if (graphConnection.getOverallWeight() > maxWeight) {
+            for (Edge<T> edge : edges) {
+                if (edge.getOverallWeight() > maxWeight) {
                     break;
                 }
-                action.accept(graphConnection);
+                action.accept(edge);
             }
         }
     }
@@ -66,8 +65,8 @@ class OptimizedGraph<T> implements Graph<T> {
         if (start.equals(node)) {
             return true;
         }
-        for (GraphConnection<T> graphConnection : graphConnections) {
-            if (graphConnection.getConnection().getConnectedInstance().equals(node)) {
+        for (Edge<T> edge : edges) {
+            if (edge.getConnection().getConnectedInstance().equals(node)) {
                 return true;
             }
         }
@@ -76,8 +75,8 @@ class OptimizedGraph<T> implements Graph<T> {
 
     @Override
     public void iterate(BiConsumer<T, Connection<T>> consumer) {
-        for (GraphConnection<T> graphConnection : graphConnections) {
-            consumer.accept(graphConnection.getOwner(), graphConnection.getConnection());
+        for (Edge<T> edge : edges) {
+            consumer.accept(edge.getOwner(), edge.getConnection());
         }
     }
 }

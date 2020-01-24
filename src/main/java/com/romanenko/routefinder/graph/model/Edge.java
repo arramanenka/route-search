@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 @Data
 @AllArgsConstructor
 @RequiredArgsConstructor
-public class GraphConnection<T> implements Comparable<GraphConnection<T>> {
+public class Edge<T> implements Comparable<Edge<T>> {
 
     private final Connection<T> connection;
 
@@ -19,7 +19,7 @@ public class GraphConnection<T> implements Comparable<GraphConnection<T>> {
     private int overallWeight;
 
     @Override
-    public int compareTo(GraphConnection<T> tGraphConnection) {
-        return Integer.compare(this.overallWeight, tGraphConnection.overallWeight);
+    public int compareTo(Edge<T> tEdge) {
+        return Integer.compare(this.overallWeight, tEdge.overallWeight);
     }
 }

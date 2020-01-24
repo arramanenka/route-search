@@ -1,7 +1,7 @@
 package com.romanenko.routefinder.graph;
 
 import com.romanenko.routefinder.graph.model.Connection;
-import com.romanenko.routefinder.graph.model.GraphConnection;
+import com.romanenko.routefinder.graph.model.Edge;
 
 import java.util.Collection;
 import java.util.function.BiConsumer;
@@ -35,7 +35,7 @@ public interface Graph<T> {
      * @param maxWeight depicts max weight (sum of weights in indirect case)
      * @param action    what should be done.
      */
-    void forEachReachableNode(T start, int maxWeight, Consumer<GraphConnection<T>> action);
+    void forEachReachableNode(T start, int maxWeight, Consumer<Edge<T>> action);
 
     boolean contains(T node);
 

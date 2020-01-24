@@ -3,10 +3,9 @@ package com.romanenko.routefinder.graph.impl;
 import com.romanenko.routefinder.graph.Graph;
 import com.romanenko.routefinder.graph.MutableGraph;
 import com.romanenko.routefinder.graph.model.Connection;
-import com.romanenko.routefinder.graph.model.GraphConnection;
+import com.romanenko.routefinder.graph.model.Edge;
 import lombok.Setter;
 import lombok.ToString;
-import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -36,7 +35,7 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
 
     @Override
     public Graph<T> getOptimalGraph(T start, int maxWeight) {
-        LinkedList<GraphConnection<T>> resultList = new LinkedList<>();
+        LinkedList<Edge<T>> resultList = new LinkedList<>();
         if (maxWeight > 0) {
             forEachReachableNode(start, maxWeight, resultList::add);
         }
@@ -46,30 +45,30 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
     }
 
     // todo: expose consumer. This would be hella useful for further moving to reactive controller.
-    public void forEachReachableNode(T start, int maxWeight, Consumer<GraphConnection<T>> onNewGraphFound) {
-        Set<GraphConnection<T>> resultSet = new HashSet<>();
+    public void forEachReachableNode(T start, int maxWeight, Consumer<Edge<T>> onNewGraphFound) {
+        Set<Edge<T>> resultSet = new HashSet<>();
 
         List<Connection<T>> startConnections = nodeListMap.get(start);
         if (CollectionUtils.isEmpty(startConnections)) {
             return;
         }
-        PriorityQueue<GraphConnection<T>> priorityQueue = new PriorityQueue<>();
+        PriorityQueue<Edge<T>> priorityQueue = new PriorityQueue<>();
 
         for (Connection<T> connection : startConnections) {
             if (connection.getWeight() <= maxWeight) {
-                priorityQueue.add(new GraphConnection<>(connection, start, connection.getWeight()));
+                priorityQueue.add(new Edge<>(connection, start, connection.getWeight()));
             }
         }
         while (!priorityQueue.isEmpty()) {
-            GraphConnection<T> graphConnection = priorityQueue.poll();
+            Edge<T> edge = priorityQueue.poll();
             // it is possible if we f.e. already found a less weighted pass to this indirectConnection
-            if (resultSet.contains(graphConnection)) {
+            if (resultSet.contains(edge)) {
                 continue;
             }
-            resultSet.add(graphConnection);
-            onNewGraphFound.accept(graphConnection);
+            resultSet.add(edge);
+            onNewGraphFound.accept(edge);
 
-            T indirectConnectionInstance = graphConnection.getConnection().getConnectedInstance();
+            T indirectConnectionInstance = edge.getConnection().getConnectedInstance();
 
             List<Connection<T>> connections = nodeListMap.get(indirectConnectionInstance);
             if (CollectionUtils.isEmpty(connections)) {
@@ -77,16 +76,16 @@ public class UnbalancedGraph<T> implements MutableGraph<T> {
             }
             for (Connection<T> connection : connections) {
                 if (connection.getConnectedInstance().equals(start)
-                        || resultSet.contains(new GraphConnection<>(connection))) {
+                        || resultSet.contains(new Edge<>(connection))) {
                     continue;
                 }
-                int overallWeight = graphConnection.getOverallWeight() + connection.getWeight();
+                int overallWeight = edge.getOverallWeight() + connection.getWeight();
                 // due to the fact that addition of connections is done in sorted manner, once we reach the element,
                 // that has overallWeight bigger than desired, we can simply skip others, since they will have >= weight
                 if (overallWeight > maxWeight) {
                     break;
                 }
-                priorityQueue.offer(new GraphConnection<>(connection, indirectConnectionInstance, overallWeight));
+                priorityQueue.offer(new Edge<>(connection, indirectConnectionInstance, overallWeight));
             }
         }
     }

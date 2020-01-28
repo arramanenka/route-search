@@ -4,8 +4,6 @@ import com.romanenko.routefinder.graph.MutableGraph;
 import com.romanenko.routefinder.graph.model.Connection;
 import lombok.Setter;
 import lombok.ToString;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -19,7 +17,7 @@ import java.util.function.BiConsumer;
 @ToString
 public class SortedGraph<T> implements MutableGraph<T> {
 
-    final MultiValueMap<T, Connection<T>> nodeListMap = new LinkedMultiValueMap<>();
+    final Map<T, List<Connection<T>>> nodeListMap = new HashMap<>();
     @Setter
     private boolean biDirectional = true;
 

@@ -7,6 +7,7 @@ import lombok.ToString;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * Basic graph implementation, which stores connections sorting by weight. Not threadsafe
@@ -20,6 +21,8 @@ public class SortedGraph<T> implements MutableGraph<T> {
     final Map<T, List<Connection<T>>> nodeListMap = new HashMap<>();
     @Setter
     private boolean biDirectional = true;
+    @Setter
+    private BiFunction<T, Integer, Connection<T>> connectionProvider = Connection::new;
 
     @Override
     public boolean storesSortedConnections() {
@@ -32,6 +35,11 @@ public class SortedGraph<T> implements MutableGraph<T> {
     }
 
     @Override
+    public void add(T ownerInstance, T connectedInstance, int weight) {
+        add(ownerInstance, connectionProvider.apply(connectedInstance, weight));
+    }
+
+    @Override
     public void add(T ownerInstance, Connection<T> connection) {
         // do not allow recursive connections
         if (connection.getConnectedInstance().equals(ownerInstance)) {
@@ -39,7 +47,10 @@ public class SortedGraph<T> implements MutableGraph<T> {
         }
         appendElementToMap(ownerInstance, connection);
         if (biDirectional) {
-            appendElementToMap(connection.getConnectedInstance(), new Connection<>(ownerInstance, connection.getWeight()));
+            appendElementToMap(
+                    connection.getConnectedInstance(),
+                    connectionProvider.apply(ownerInstance, connection.getWeight())
+            );
         }
     }
 
@@ -63,7 +74,7 @@ public class SortedGraph<T> implements MutableGraph<T> {
     @Override
     public void remove(T node) {
         nodeListMap.remove(node);
-        Connection<T> connection = new Connection<>(node, 0);
+        Connection<T> connection = connectionProvider.apply(node, 0);
         Iterator<Map.Entry<T, List<Connection<T>>>> iterator = nodeListMap.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<T, List<Connection<T>>> next = iterator.next();
